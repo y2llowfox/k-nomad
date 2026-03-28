@@ -1,178 +1,217 @@
-# 도시 상세페이지 구현 계획
+# MVP 스펙 적용 + 도시 상세페이지 구현 계획
 
 > 작성일: 2026-03-28
-> 레퍼런스: NomadList Bangkok 상세페이지 (`nomads_bangkok.png`)
-> 분해 전략: 레이어별 (수직) — 데이터 → 레이아웃 → 정보 → 인터랙션 → 마무리
+> 전략: 스펙 우선 — 홈페이지를 MVP 스펙에 맞게 정리한 뒤, 도시 상세페이지를 추가
+> 핵심 변경: 별점/평점 → 좋아요/싫어요 전환, 필터 4개로 축소, 카드 구조 변경
+> 도시 정보: 예산 / 지역 / 환경 / 최고의 계절 + 좋아요·싫어요 (이것만)
 
 ---
 
-## Phase 1. 데이터 & API 레이어
+## Phase 1. 데이터 모델 변경 (좋아요/싫어요 + 환경/계절 필드)
 
 ### 오버뷰
-도시 상세페이지에 필요한 데이터를 단일 API로 제공하는 엔드포인트를 만든다. 완료되면 `/api/cities/[slug]` 호출 시 City + 모든 관계 데이터(metrics, costs, weather, photos, pros/cons, coworkings, reviews, nearby)가 JSON으로 반환된다.
+MVP 스펙의 핵심인 좋아요/싫어요 시스템과 새로운 필터 기준(환경, 최고의 계절)을 데이터 모델에 반영한다. 완료되면 City에 `likes`, `dislikes`, `environment`, `bestSeason` 필드가 추가되고, 좋아요 기록 테이블이 생성된다.
 
 ### 현재 상태
-- Prisma 스키마에 City 모델 + 12개 관계 테이블 정의 완료
-- `/api/cities/route.ts` — 도시 리스트 API만 존재
-- `lib/data/cities.ts` — 30개 도시 시드 데이터 존재
-- `lib/types.ts` — City 인터페이스 정의 완료
-- `/api/cities/[slug]` 엔드포인트 없음
+- City 모델: `overallScore`(별점), `internetSpeed`, `currentTemp`, `hasKTX`, `isSeaside` 등 MVP에서 불필요한 필드 다수
+- MVP 스펙에 필요한 필드: `likes`, `dislikes`, `environment`, `bestSeason` → 없음
+- `lib/types.ts` — `City` 인터페이스, `FilterParams` 인터페이스
+- `lib/constants.ts` — `SORT_OPTIONS`, `INTERNET_RANGES` 등 삭제 대상 상수 다수
 
 ### 수정/개선 체크리스트
-- [ ] **API 라우트 생성** — `app/api/cities/[slug]/route.ts`
-  - Prisma `findUnique`로 slug 기반 조회
-  - `include`로 모든 관계 데이터 포함: metrics, costs, highlights, tags(pros/cons), weather, photos, coworkings, reviews(최신 10개 + author 정보), nearbyFrom → toCity
-  - 404 처리: 존재하지 않는 slug일 때 `{ error: "City not found" }` 반환
-- [ ] **타입 보강 (필요 시)** — `lib/types.ts`
-  - `CityDetail` 타입 추가 (City 기본 + 관계 데이터 전체 포함)
-  - API 응답 타입 정의
-- [ ] **데이터 검증** — 시드 데이터에 관계 데이터(metrics, costs, weather 등)가 실제로 존재하는지 확인
-  - 누락 시 `prisma/seed.ts`에 샘플 데이터 보강
+- [ ] **Prisma 스키마 변경** — `prisma/schema.prisma`
+  - City 모델에 추가: `likes Int @default(0)`, `dislikes Int @default(0)`, `environment String` (JSON 배열: "바다","산/자연","도심","소도시"), `bestSeason String` (JSON 배열: "봄","여름","가을","겨울")
+  - 새 모델 `CityVote`: `id`, `citySlug`, `userId`, `type` ("like"|"dislike"), `@@unique([citySlug, userId])`
+  - 기존 불필요 필드는 유지 (마이그레이션 리스크 최소화)
+- [ ] **마이그레이션 실행** — `npx prisma migrate dev --name add-likes-environment-season`
+- [ ] **타입 업데이트** — `lib/types.ts`
+  - `City` 인터페이스에 `likes`, `dislikes`, `environment: string[]`, `bestSeason: string[]` 추가
+  - `FilterParams`에 `environment?: string`, `bestSeason?: string` 추가, `minInternet`, `hasKTX`, `isSeaside`, `sort` 제거
+- [ ] **상수 업데이트** — `lib/constants.ts`
+  - `SORT_OPTIONS`, `INTERNET_RANGES` 삭제
+  - `COST_RANGES` 스펙 기준으로 변경: 80만 이하, 80~120만, 120~160만, 160만 이상
+  - `ENVIRONMENTS` 추가: `["바다", "산/자연", "도심", "소도시"]`
+  - `SEASONS` 추가: `["봄", "여름", "가을", "겨울"]`
+- [ ] **시드 데이터 업데이트** — `prisma/seed.ts`
+  - 30개 도시에 `likes`, `dislikes` 초기값 (임의 숫자)
+  - 30개 도시에 `environment`, `bestSeason` 값 설정 (각 도시 1개 이상)
+- [ ] **매퍼 업데이트** — `lib/data/mappers.ts`
+  - `mapCityCard()`에 `likes`, `dislikes`, `environment`, `bestSeason` 추가
+  - `environment`/`bestSeason`은 JSON.parse로 배열 변환
 
 ### 검증 체크리스트
-- [ ] `curl localhost:3000/api/cities/jeju` 호출 시 모든 관계 데이터 포함된 JSON 반환
-- [ ] 존재하지 않는 slug 호출 시 404 응답
-- [ ] 기존 `/api/cities` 리스트 API 정상 동작 확인 (회귀 테스트)
+- [ ] `npx prisma migrate dev` 성공
+- [ ] `npx prisma db seed` 성공, 30개 도시에 likes/dislikes/environment/bestSeason 존재
+- [ ] 기존 데이터(metrics, costs 등) 손상 없음
+- [ ] `npx prisma studio`에서 새 필드 확인
 
 ---
 
-## Phase 2. 페이지 레이아웃 + Hero 섹션
+## Phase 2. 좋아요/싫어요 API + 필터 로직 변경
 
 ### 오버뷰
-`/cities/[slug]` 라우트와 페이지 컴포넌트를 생성한다. Hero 이미지 + 도시명 + 핵심 지표 요약 + 탭 네비게이션 골격을 구현한다. 완료되면 CityCard 클릭 시 도시 상세페이지로 이동하여 Hero 영역이 렌더링된다.
+좋아요/싫어요 토글 API와 MVP 스펙 기준 필터링 로직을 구현한다. 완료되면 좋아요/싫어요 API가 동작하고, 4개 필터(예산/지역/환경/계절) + 좋아요순 정렬이 적용된다.
 
 ### 현재 상태 (Phase 1 완료 후)
-- `/api/cities/[slug]` API 정상 동작
-- CityDetail 타입 정의 완료
+- City에 `likes`, `dislikes`, `environment`, `bestSeason` 필드 존재
+- `CityVote` 테이블로 사용자별 투표 기록 가능
+- `lib/data/index.ts` — `filterCities()`가 기존 필터(region, maxCost, minInternet, hasKTX, isSeaside) 사용 중
 
 ### 수정/개선 체크리스트
-- [ ] **페이지 라우트 생성** — `app/cities/[slug]/page.tsx`
-  - Server Component로 구현 (SSR)
-  - Prisma 직접 호출 또는 내부 fetch로 데이터 조회
-  - `generateMetadata`로 동적 SEO 메타데이터 (도시명 + 설명)
-- [ ] **Hero 섹션 컴포넌트** — `components/city/Hero.tsx`
-  - 도시 대표 이미지 (full-width, 높이 300~400px)
-  - 이미지 위 오버레이: 도시명(한글/영문), 지역, 카테고리 뱃지
-  - "← 목록으로" 뒤로가기 버튼
-  - 레퍼런스: `nomads_bangkok.png` 상단 영역 참고
-- [ ] **핵심 지표 요약 바** — `components/city/ScoreSummary.tsx`
-  - Hero 아래 가로 배치: 종합점수, 월 생활비, 인터넷 속도, 현재 기온
-  - 컬러 뱃지 형태 (점수별 초록/노랑/빨강)
-- [ ] **탭 네비게이션** — `components/city/TabNav.tsx`
-  - 탭 항목: 스코어, 생활비, 날씨, 장단점, 코워킹, 리뷰, 사진, 주변도시
-  - 클릭 시 해당 섹션으로 스크롤 (앵커 기반)
-  - sticky 상단 고정 (스크롤 시)
+- [ ] **좋아요/싫어요 API** — `app/api/cities/[slug]/vote/route.ts`
+  - POST `{ type: "like" | "dislike" }`
+  - 로그인 필수 (Supabase Auth 세션 확인), 비로그인 시 401
+  - 같은 타입 재클릭 → 토글 해제 (CityVote 삭제 + likes/dislikes -1)
+  - 다른 타입 클릭 → 기존 해제 + 새 타입 활성화 (CityVote upsert + 카운트 조정)
+  - 응답: `{ likes, dislikes, userVote: "like"|"dislike"|null }`
+- [ ] **사용자 투표 상태 조회** — GET 동일 경로
+  - 로그인 시: 해당 도시에 대한 현재 투표 상태 반환
+  - 비로그인 시: `{ userVote: null }`
+- [ ] **필터 로직 변경** — `lib/data/index.ts`의 `filterCities()`
+  - `minInternet`, `hasKTX`, `isSeaside` 필터 제거
+  - `environment` 필터 추가: `environment` 필드(JSON 문자열)에 해당 값 포함 여부 (`contains`)
+  - `bestSeason` 필터 추가: 동일 방식
+  - `maxCost` 범위 필터 변경: "80" → ≤80, "80-120" → 80<x≤120, "120-160" → 120<x≤160, "160" → >160
+  - 기본 정렬: `likes` 내림차순
+  - `sort` 파라미터 제거
+- [ ] **API 라우트 업데이트** — `app/api/cities/route.ts`
+  - `searchParams`에서 `environment`, `bestSeason` 파싱
+  - `minInternet`, `hasKTX`, `isSeaside`, `sort` 제거
 
 ### 검증 체크리스트
-- [ ] `/cities/jeju` 접속 시 Hero 이미지 + 도시명 + 지표 요약 렌더링
-- [ ] 탭 클릭 시 해당 섹션 ID로 스크롤
-- [ ] 홈페이지 CityCard 클릭 → 상세페이지 이동 정상 동작
-- [ ] 뒤로가기 버튼 → 홈 이동
-- [ ] 모바일에서 Hero 이미지 비율 정상
+- [ ] POST `/api/cities/jeju/vote` `{ type: "like" }` → likes +1, 재호출 → likes -1 (토글)
+- [ ] like 상태에서 dislike → likes -1, dislikes +1
+- [ ] 비로그인 시 401 응답
+- [ ] `/?environment=바다` → 바다 환경 도시만 반환
+- [ ] `/?bestSeason=여름` → 여름 추천 도시만 반환
+- [ ] 기본 정렬이 likes 내림차순
 
 ---
 
-## Phase 3. 정보 섹션 (스코어 + 생활비 + 날씨)
+## Phase 3. 홈페이지 UI 변경 (카드 + 필터 + 그리드)
 
 ### 오버뷰
-도시의 정량적 데이터를 시각화하는 3개 섹션을 구현한다. 완료되면 12개 지표 스코어 바, 생활비 항목별 테이블, 12개월 날씨 차트가 표시된다.
+CityCard, FilterBar, CityGrid를 MVP 스펙에 맞게 변경한다. 완료되면 홈페이지가 MVP 스펙과 일치한다.
 
 ### 현재 상태 (Phase 2 완료 후)
-- `/cities/[slug]` 페이지 + Hero + 탭 네비 동작
-- 데이터: metrics(12개 지표), costs(항목별), weather(12개월) 로드 완료
+- API가 새 필터 + 좋아요순 정렬로 동작
+- CityCard: 순위(#1), 인터넷 속도, 현재 기온, 호버 바차트 표시 중 → **삭제 대상**
+- FilterBar: 지역, 생활비, 인터넷, KTX, 바다, 정렬 6개 → **4개로 축소**
+- CityGrid: "총 N개 도시" → "도시 리스트"로 변경
 
 ### 수정/개선 체크리스트
-- [ ] **스코어 섹션** — `components/city/ScoreSection.tsx`
-  - 12개 지표를 컬러 프로그레스바로 표시 (레퍼런스: Bangkok 페이지 좌측 스코어 바)
-  - 각 지표: emoji + 라벨 + 바 + 점수(5점 만점)
-  - 바 색상: 4.0↑ 초록, 3.0↑ 노랑, 2.0↑ 주황, 그 외 빨강
-  - 2열 그리드 레이아웃 (모바일 1열)
-- [ ] **생활비 섹션** — `components/city/CostSection.tsx`
-  - 항목별 비용 테이블: 카테고리, 금액, 단위
-  - 상단에 월 총 생활비 강조 표시
-  - 항목 예시: 원룸, 코워킹, 식비, 카페, 교통 등
-- [ ] **날씨 섹션** — `components/city/WeatherSection.tsx`
-  - 12개월 기온/강수량 차트 (간단한 바 차트 또는 라인)
-  - 차트 라이브러리 없이 Tailwind + div 기반 구현 (또는 recharts 사용)
-  - 현재 월 하이라이트 표시
-  - 습도 정보 포함
+- [ ] **CityCard 재구성** — `components/home/CityCard.tsx`
+  - 삭제: 순위(`#{rank}`), 인터넷 속도, 현재 기온, 호버 시 6개 지표 바차트, `isHovered` 상태
+  - 새 카드 구조 (MVP 스펙 §6):
+    ```
+    [도시 이미지]
+    도시명
+    지역
+    💰 예산     80만원/월
+    📍 지역     전라
+    🌿 환경     소도시
+    🌸 최고의 계절  봄
+    👍 42    👎 3
+    ```
+  - 좋아요/싫어요 버튼: 클릭 시 API 호출, 토글 동작, 색상 변경 (좋아요=빨강, 싫어요=파랑)
+  - 비로그인 시 클릭 → 로그인 페이지로 이동
+  - Props 변경: `rank` 제거
+  - `/cities/${city.slug}` 링크 유지 (Phase 4에서 상세페이지 연결)
+- [ ] **FilterBar 변경** — `components/home/FilterBar.tsx`
+  - 삭제: 인터넷 속도 필터, KTX 버튼, 바다 버튼, 정렬 드롭다운
+  - 유지: 지역 필터, 예산 필터
+  - 추가: 환경 필터 (바다/산·자연/도심/소도시), 최고의 계절 필터 (봄/여름/가을/겨울)
+  - 4개 필터 가로 배치, 초기화 버튼 유지
+- [ ] **CityGrid 변경** — `components/home/CityGrid.tsx`
+  - "총 N개 도시" → "도시 리스트"로 텍스트 변경
+  - `rank` prop 전달 제거
+- [ ] **constants 정리** — `lib/constants.ts`
+  - `INTERNET_RANGES`, `SORT_OPTIONS` 삭제
+  - `COST_RANGES` 스펙 기준 업데이트
 
 ### 검증 체크리스트
-- [ ] 12개 지표가 올바른 색상 바로 렌더링
-- [ ] 생활비 항목 합계 ≈ monthlyCost 값과 일치
-- [ ] 12개월 날씨 데이터 모두 표시
-- [ ] 탭 네비에서 각 섹션 클릭 시 정확한 위치로 스크롤
+- [ ] 카드에 순위/인터넷/기온/호버 바차트 없음
+- [ ] 카드에 예산/지역/환경/계절 + 좋아요·싫어요 수 표시
+- [ ] 좋아요 클릭 → 빨강 아이콘 + 수 +1, 다시 클릭 → 해제
+- [ ] 필터 4개만 표시: 예산, 지역, 환경, 최고의 계절
+- [ ] 정렬 드롭다운 없음, 기본 좋아요순
+- [ ] "도시 리스트" 텍스트 표시
 
 ---
 
-## Phase 4. 커뮤니티 섹션 (장단점 + 리뷰 + 사진 + 코워킹)
+## Phase 4. 도시 상세페이지 구현
 
 ### 오버뷰
-사용자 생성 콘텐츠 및 정성적 정보를 표시하는 섹션들을 구현한다. 완료되면 장단점 태그, 리뷰 목록, 사진 갤러리, 코워킹 스페이스 카드가 표시된다.
+`/cities/[slug]` 라우트를 생성하고, 도시 이미지 + 4개 정보(예산/지역/환경/계절) + 좋아요/싫어요만 표시하는 MVP 상세페이지를 구현한다. 카드와 동일한 정보를 더 넓은 레이아웃으로 보여주되, MVP 범위를 벗어나지 않는다.
 
 ### 현재 상태 (Phase 3 완료 후)
-- 스코어/생활비/날씨 섹션 렌더링 완료
-- 데이터: pros/cons(tags), reviews, photos, coworkings 로드 완료
+- 홈페이지가 MVP 스펙 일치
+- CityCard가 `/cities/${city.slug}` 링크 설정됨 (클릭 시 404)
+- 좋아요/싫어요 API 동작 중
+- City 데이터에 `likes`, `dislikes`, `environment`, `bestSeason` 존재
 
 ### 수정/개선 체크리스트
-- [ ] **장단점 섹션** — `components/city/ProsConsSection.tsx`
-  - 장점/단점 2열 배치
-  - 각 태그: emoji + 텍스트 + 투표 수
-  - 장점은 초록 뱃지, 단점은 빨강 뱃지
-- [ ] **리뷰 섹션** — `components/city/ReviewSection.tsx`
-  - 리뷰 카드 리스트: 닉네임, 직업, 방문기간, 체류기간, 점수, 추천여부, 본문
-  - 도움됨/안됨 버튼 (읽기 전용 — 인터랙션은 MVP 이후)
-  - 최신순 정렬, 최대 10개 표시
-- [ ] **사진 갤러리** — `components/city/PhotoGallery.tsx`
-  - 그리드 레이아웃 (3열, 모바일 2열)
-  - 클릭 시 라이트박스 (shadcn Dialog 활용)
-- [ ] **코워킹 스페이스** — `components/city/CoworkingSection.tsx`
-  - 카드 형태: 이미지, 이름, 주소, 일/월 가격, 편의시설 태그, 영업시간, 평점
-  - 가로 스크롤 또는 그리드
+- [ ] **데이터 함수** — `lib/data/index.ts`
+  - `getCityBySlug(slug)` 추가: `prisma.city.findUnique({ where: { slug } })`
+  - 반환: 기본 필드 + likes/dislikes/environment/bestSeason (관계 include 불필요)
+  - null이면 null 반환
+- [ ] **페이지 라우트** — `app/cities/[slug]/page.tsx`
+  - Server Component, `getCityBySlug(params.slug)`, null이면 `notFound()`
+  - `generateMetadata()`: `${city.name} - K-Nomad`
+- [ ] **상세페이지 레이아웃** — `components/city/CityDetail.tsx`
+  - Hero: 도시 이미지 (full-width, h-[200px] md:h-[320px]), 그라데이션 오버레이, 도시명 + 영문명
+  - "← 목록으로" 링크 (`/` 이동)
+  - 4개 정보 카드 (2x2 그리드):
+    ```
+    💰 예산        📍 지역
+    80만원/월       전라
+
+    🌿 환경        🌸 최고의 계절
+    소도시          봄, 가을
+    ```
+  - 좋아요/싫어요 버튼 (큰 버전): 카드와 동일 API 사용, 토글 동작
+  - 비로그인 시 → 로그인 이동
+  - 도시 설명 텍스트 (`city.description`)
+- [ ] **에러 상태** — `app/cities/[slug]/not-found.tsx`
+  - "존재하지 않는 도시입니다" + 홈으로 돌아가기 버튼
 
 ### 검증 체크리스트
-- [ ] 장점/단점이 올바른 색상으로 분리 표시
-- [ ] 리뷰가 최신순으로 정렬되어 표시
-- [ ] 사진 클릭 시 라이트박스 열림/닫힘
-- [ ] 코워킹 카드 정보가 정확히 표시
-- [ ] 각 섹션이 탭 네비에서 정확히 연결
+- [ ] CityCard 클릭 → `/cities/jeju` → Hero + 4개 정보 + 좋아요/싫어요 렌더링
+- [ ] 상세페이지 좋아요 클릭 → 홈 카드 카운트와 동기화
+- [ ] `/cities/nonexistent` → 404 페이지
+- [ ] "← 목록으로" → 홈 이동
+- [ ] 모바일/데스크톱 반응형 정상
 
 ---
 
-## Phase 5. 주변도시 + 반응형 + 마무리
+## Phase 5. 반응형 + MVP_SPEC 반영 + 마무리
 
 ### 오버뷰
-주변 도시 추천, 모바일 반응형 최적화, 전체 페이지 완성도를 높인다. 완료되면 도시 상세페이지가 데스크톱/모바일 모두에서 완전하게 동작한다.
+전체 반응형 최적화, MVP_SPEC.md 업데이트, 네비게이션 정리를 완료한다.
 
 ### 현재 상태 (Phase 4 완료 후)
-- 모든 콘텐츠 섹션 구현 완료
-- 데이터: nearbyFrom 관계 로드 완료
-- 반응형 미최적화 상태
+- 홈페이지 + 상세페이지 모두 동작
+- MVP_SPEC.md에 상세페이지가 "삭제 대상"으로 남아 있음
 
 ### 수정/개선 체크리스트
-- [ ] **주변 도시 섹션** — `components/city/NearbyCities.tsx`
-  - 기존 CityCard 컴포넌트 재사용 (축소 버전)
-  - 가로 스크롤 캐러셀 형태
-  - 클릭 시 해당 도시 상세페이지로 이동
-- [ ] **반응형 최적화**
-  - Hero: 모바일에서 높이 200px, 텍스트 크기 축소
-  - 탭 네비: 모바일에서 가로 스크롤
-  - 스코어 섹션: 모바일 1열
-  - 코워킹/사진: 모바일 그리드 축소
-  - 전체 섹션 간 간격/패딩 통일
-- [ ] **로딩 & 에러 상태**
-  - `app/cities/[slug]/loading.tsx` — 스켈레톤 UI
-  - `app/cities/[slug]/not-found.tsx` — 404 페이지 ("존재하지 않는 도시입니다")
 - [ ] **MVP_SPEC.md 업데이트**
+  - 페이지 구조 테이블에 `/cities/[slug]` 추가 (도시 상세 — 4개 정보 + 좋아요/싫어요)
   - 삭제 대상에서 `/cities/[slug]` 제거
-  - 페이지 구조 테이블에 도시 상세페이지 추가
+- [ ] **반응형 최적화**
+  - CityCard: 모바일 2열 유지, 텍스트 크기 조정
+  - FilterBar: 모바일에서 2x2 그리드 또는 가로 스크롤
+  - 상세페이지: Hero 높이 조정, 정보 카드 모바일 1열 → 데스크톱 2x2
+- [ ] **네비게이션 확인** — `components/layout/Header.tsx`
+  - 스펙 §3: 로고(홈 이동), 로그인/회원가입 또는 닉네임/로그아웃만 유지
+- [ ] **Hero 섹션 확인** — `components/home/Hero.tsx`
+  - 스펙 §9: 이메일 입력 + "무료로 시작하기" CTA 유지
 
 ### 검증 체크리스트
-- [ ] 주변 도시 클릭 → 해당 상세페이지 이동 (페이지 간 네비게이션)
-- [ ] 모바일(375px) / 태블릿(768px) / 데스크톱(1280px) 3개 뷰포트에서 레이아웃 정상
-- [ ] 존재하지 않는 slug 접속 시 404 페이지 표시
-- [ ] 느린 네트워크에서 로딩 스켈레톤 표시
-- [ ] 홈 → 상세 → 주변도시 → 상세 → 홈 전체 플로우 정상
+- [ ] MVP_SPEC.md와 실제 구현 일치
+- [ ] 모바일(375px) / 태블릿(768px) / 데스크톱(1280px) 전체 정상
+- [ ] 전체 플로우: 홈 → 카드 클릭 → 상세 → 좋아요 → ← 목록 → 홈 (좋아요 반영)
+- [ ] 비로그인: 좋아요 클릭 → 로그인 페이지 이동
+- [ ] 네비게이션: 로고, 로그인/회원가입만 표시 (비로그인 시)
 
 ---
 
@@ -180,8 +219,8 @@
 
 | Phase | 핵심 작업 | 완료 시 상태 |
 |-------|----------|-------------|
-| 1 | API 엔드포인트 + 타입 정의 | `/api/cities/[slug]`로 전체 도시 데이터 조회 가능 |
-| 2 | 페이지 라우트 + Hero + 탭 네비 | CityCard 클릭 → 상세페이지 이동, Hero 렌더링 |
-| 3 | 스코어 바 + 생활비 테이블 + 날씨 차트 | 정량 데이터 3개 섹션 시각화 완료 |
-| 4 | 장단점 + 리뷰 + 사진 + 코워킹 | 정성 데이터 4개 섹션 표시 완료 |
-| 5 | 주변도시 + 반응형 + 로딩/에러 | 전체 페이지 완성, 모바일 대응, 프로덕션 준비 |
+| 1 | 데이터 모델 (likes, environment, bestSeason) | 새 필드 + 마이그레이션 완료 |
+| 2 | 좋아요 API + 필터 4개로 축소 | API 동작, 좋아요순 정렬 |
+| 3 | 홈 UI (카드 재구성 + 필터 축소) | 홈페이지 = MVP 스펙 |
+| 4 | 도시 상세페이지 (4개 정보 + 좋아요/싫어요) | 상세페이지 동작 |
+| 5 | 반응형 + 스펙 문서 + 마무리 | 프로덕션 준비 완료 |
