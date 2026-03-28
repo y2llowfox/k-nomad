@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>K-Nomad MVP Plan</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; line-height: 1.8; }
+  h1 { border-bottom: 2px solid #e74c3c; padding-bottom: 12px; }
+  h2 { margin-top: 48px; color: #e74c3c; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+  h3 { color: #333; margin-top: 28px; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+  th, td { border: 1px solid #ddd; padding: 10px 14px; text-align: left; }
+  th { background: #f8f8f8; font-weight: 600; }
+  tr:nth-child(even) { background: #fafafa; }
+  code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+  pre { background: #1a1a2e; color: #eee; padding: 16px; border-radius: 8px; overflow-x: auto; }
+  pre code { background: none; padding: 0; color: #eee; }
+  blockquote { border-left: 4px solid #e74c3c; margin: 16px 0; padding: 8px 16px; color: #666; background: #fef5f5; }
+  ul { padding-left: 24px; }
+  li { margin: 6px 0; }
+  input[type="checkbox"] { margin-right: 8px; transform: scale(1.2); accent-color: #e74c3c; }
+  strong { color: #c0392b; }
+  hr { border: none; border-top: 2px solid #eee; margin: 40px 0; }
+</style>
+</head>
+<body>
+<h1>K-Nomad MVP 실행 계획</h1>
+<blockquote>
+<p>기준 문서: <code>MVP_SPEC.md</code>
+작성일: 2026-03-28
+데이터: 가짜 데이터 사용 (DB 미사용)</p>
+</blockquote>
+<hr>
+<h2>Phase 1. 페이지 정리 &amp; 네비게이션 단순화</h2>
+<h3>오버뷰</h3>
+<p>불필요한 페이지와 컴포넌트를 삭제하고, 네비게이션을 로고 + 인증 버튼만 남긴다.
+사이드바를 제거하고 홈페이지 레이아웃을 전체 너비로 변경한다.
+이 단계가 끝나면 사이트는 홈(<code>/</code>), 로그인(<code>/login</code>), 회원가입(<code>/register</code>) 3개 페이지만 존재한다.</p>
+<h3>현재 상태</h3>
+<ul>
+<li>페이지: 홈, 도시 상세, 비교, 리뷰 작성, 프로그램, 이용약관, 개인정보, 문의하기, 로그인, 회원가입</li>
+<li>네비게이션: 로고, 홈, 비교, 로그인/회원가입</li>
+<li>사이드바: 워케이션 프로그램, 밋업, 여행 중 유저, 오늘의 추천, CTA 카드</li>
+<li>Footer: 이용약관, 개인정보, 문의하기 링크</li>
+</ul>
+<h3>수정/개선 체크리스트</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <strong>페이지 삭제</strong> — 다음 디렉토리/파일 삭제<ul>
+<li><code>app/cities/</code> (도시 상세 페이지)</li>
+<li><code>app/compare/</code> (도시 비교 페이지)</li>
+<li><code>app/review/</code> (리뷰 작성 페이지)</li>
+<li><code>app/programs/</code> (워케이션 프로그램 페이지)</li>
+<li><code>app/terms/</code> (이용약관)</li>
+<li><code>app/privacy/</code> (개인정보처리방침)</li>
+<li><code>app/contact/</code> (문의하기)</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>API 라우트 삭제</strong> — 삭제된 페이지와 연결된 API 정리<ul>
+<li><code>app/api/cities/[slug]/reviews/</code> (리뷰 작성 API)</li>
+<li><code>app/api/cities/[slug]/coworkings/</code> (코워킹 API)</li>
+<li><code>app/api/cities/[slug]/nearby/</code> (주변 도시 API)</li>
+<li><code>app/api/cities/compare/</code> (비교 API)</li>
+<li><code>app/api/reviews/[id]/vote/</code> (리뷰 투표 API)</li>
+<li><code>app/api/programs/</code> (프로그램 API)</li>
+<li><code>app/api/meetups/</code> (밋업 API)</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>컴포넌트 삭제</strong> — 삭제된 페이지 전용 컴포넌트 정리<ul>
+<li><code>components/city/</code> 디렉토리 전체 (CityHero, CityTabs, 8개 탭)</li>
+<li><code>components/compare/</code> 디렉토리 전체 (CitySelector, ComparisonTable)</li>
+<li><code>components/review/</code> 디렉토리 전체 (ReviewForm)</li>
+<li><code>components/home/Sidebar.tsx</code> (사이드바)</li>
+<li><code>components/shared/CityCardMini.tsx</code> (미니 카드 — 주변 도시용)</li>
+<li><code>components/shared/MetricBar.tsx</code> (지표 바)</li>
+<li><code>components/shared/ScoreBadge.tsx</code> (점수 뱃지)</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>네비게이션 단순화</strong> — <code>components/layout/Header.tsx</code> 수정<ul>
+<li>&quot;홈&quot;, &quot;비교&quot; 등 페이지 이동 링크 삭제</li>
+<li>로고 (홈 이동) + 로그인/회원가입 버튼만 유지</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>모바일 네비게이션 단순화</strong> — <code>components/layout/MobileNav.tsx</code> 수정<ul>
+<li>&quot;홈&quot;, &quot;도시 비교&quot;, &quot;워케이션 프로그램&quot; 링크 삭제</li>
+<li>로그인/회원가입(또는 닉네임/로그아웃)만 유지</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>Footer 단순화</strong> — <code>components/layout/Footer.tsx</code> 수정<ul>
+<li>이용약관, 개인정보, 문의하기 링크 삭제 (페이지가 없으므로)</li>
+<li>로고 + 카피라이트만 유지</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>홈페이지 레이아웃 변경</strong> — <code>app/page.tsx</code> 수정<ul>
+<li><code>&lt;Sidebar /&gt;</code> 제거</li>
+<li><code>flex gap-6</code> 레이아웃에서 사이드바 영역 제거, CityGrid가 전체 너비 사용</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>데이터 레이어 정리</strong> — <code>lib/data/index.ts</code> 수정<ul>
+<li>삭제된 기능 관련 함수 제거: <code>getCityBySlug</code>, <code>compareCities</code>, <code>getNearbyCities</code>, <code>getReviewsForCity</code>, <code>getCoworkingsForCity</code>, <code>getWorkationPrograms</code>, <code>getMeetups</code></li>
+<li><code>getAllCities</code>, <code>filterCities</code>만 유지</li>
+</ul>
+</li>
+</ul>
+<h3>검증 체크리스트</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <code>next build</code> 성공 (에러 0건)</li>
+<li><input disabled="" type="checkbox"> <code>http://localhost:3000</code> 접속 시 홈페이지 정상 표시 (Hero + 필터 + 도시 카드 그리드)</li>
+<li><input disabled="" type="checkbox"> 사이드바가 표시되지 않음</li>
+<li><input disabled="" type="checkbox"> Header에 &quot;홈&quot;, &quot;비교&quot; 등 페이지 이동 링크가 없음</li>
+<li><input disabled="" type="checkbox"> Header에 로고 + 로그인/회원가입 버튼만 표시</li>
+<li><input disabled="" type="checkbox"> Footer에 삭제된 페이지 링크가 없음</li>
+<li><input disabled="" type="checkbox"> <code>/login</code>, <code>/register</code> 정상 접속 및 동작</li>
+<li><input disabled="" type="checkbox"> <code>/cities/jeju</code>, <code>/compare</code>, <code>/programs</code> 등 삭제된 경로 접속 시 404</li>
+<li><input disabled="" type="checkbox"> 콘솔 에러 0건</li>
+</ul>
+<hr>
+<h2>Phase 2. 도시 데이터 모델 변경</h2>
+<h3>오버뷰</h3>
+<p>기존 도시 데이터에 <code>environment</code>(환경), <code>bestSeason</code>(최고의 계절), <code>likes</code>(좋아요 수), <code>dislikes</code>(싫어요 수) 필드를 추가한다.
+기존에 사용하지 않는 필드(<code>metrics</code>, <code>costs</code>, <code>weather</code>, <code>pros</code>, <code>cons</code>, <code>photos</code>, <code>nearbySlugs</code>, <code>overallScore</code>, <code>reviewCount</code>, <code>internetSpeed</code>, <code>currentTemp</code>, <code>weatherIcon</code>, <code>hasKTX</code>)는 제거한다.
+30개 도시 모두 새 필드를 최소 1개씩 가지도록 가짜 데이터를 업데이트한다.</p>
+<h3>현재 상태 (Phase 1 완료 후)</h3>
+<ul>
+<li>도시 데이터는 <code>lib/data/cities.ts</code>에 하드코딩</li>
+<li>City 타입은 <code>lib/types.ts</code>에 정의</li>
+<li>도시마다 metrics(12개 지표), costs, weather, pros, cons 등 복잡한 중첩 데이터 보유</li>
+<li>environment, bestSeason, likes, dislikes 필드 없음</li>
+</ul>
+<h3>수정/개선 체크리스트</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <strong>타입 수정</strong> — <code>lib/types.ts</code>의 <code>City</code> 인터페이스 변경<ul>
+<li>추가할 필드:<ul>
+<li><code>environment: string[]</code> — &quot;바다&quot; | &quot;산/자연&quot; | &quot;도심&quot; | &quot;소도시&quot;</li>
+<li><code>bestSeason: string[]</code> — &quot;봄&quot; | &quot;여름&quot; | &quot;가을&quot; | &quot;겨울&quot;</li>
+<li><code>likes: number</code> — 좋아요 수</li>
+<li><code>dislikes: number</code> — 싫어요 수</li>
+</ul>
+</li>
+<li>제거할 필드: <code>overallScore</code>, <code>reviewCount</code>, <code>metrics</code>, <code>costs</code>, <code>internetSpeed</code>, <code>currentTemp</code>, <code>weatherIcon</code>, <code>hasKTX</code>, <code>highlights</code>, <code>pros</code>, <code>cons</code>, <code>weather</code>, <code>nearbySlugs</code>, <code>photos</code></li>
+<li>유지할 필드: <code>slug</code>, <code>name</code>, <code>nameEn</code>, <code>region</code>, <code>category</code>, <code>description</code>, <code>imageUrl</code>, <code>monthlyCost</code>, <code>isSeaside</code></li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>FilterParams 타입 수정</strong> — <code>lib/types.ts</code><ul>
+<li>제거: <code>maxCost</code>, <code>minInternet</code>, <code>hasKTX</code>, <code>sort</code></li>
+<li>추가: <code>budget</code> (예산 범위), <code>environment</code>, <code>bestSeason</code></li>
+<li>유지: <code>region</code>, <code>isSeaside</code> (삭제 가능 — environment &quot;바다&quot;로 대체)</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>상수 수정</strong> — <code>lib/constants.ts</code><ul>
+<li>추가: <code>ENVIRONMENTS</code> = [&quot;바다&quot;, &quot;산/자연&quot;, &quot;도심&quot;, &quot;소도시&quot;]</li>
+<li>추가: <code>SEASONS</code> = [&quot;봄&quot;, &quot;여름&quot;, &quot;가을&quot;, &quot;겨울&quot;]</li>
+<li>추가: <code>BUDGET_RANGES</code> = [{ value: &quot;80&quot;, label: &quot;80만 이하&quot; }, { value: &quot;80-120&quot;, label: &quot;80<del>120만&quot; }, { value: &quot;120-160&quot;, label: &quot;120</del>160만&quot; }, { value: &quot;160&quot;, label: &quot;160만 이상&quot; }]</li>
+<li>제거: <code>METRICS</code>, <code>SORT_OPTIONS</code>, <code>INTERNET_RANGES</code>, <code>COST_RANGES</code>, <code>PRO_TAGS</code>, <code>CON_TAGS</code>, <code>PROFESSIONS</code>, <code>STAY_DURATIONS</code></li>
+<li>유지: <code>REGIONS</code></li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>도시 데이터 업데이트</strong> — <code>lib/data/cities.ts</code><ul>
+<li>30개 도시 각각에 <code>environment</code>, <code>bestSeason</code>, <code>likes</code>, <code>dislikes</code> 추가</li>
+<li>복잡한 중첩 데이터(metrics, costs, weather 등) 제거</li>
+<li>makeCity 헬퍼 함수 단순화</li>
+<li>도시별 environment/bestSeason 예시:<ul>
+<li>제주: environment=[&quot;바다&quot;,&quot;산/자연&quot;], bestSeason=[&quot;봄&quot;,&quot;가을&quot;]</li>
+<li>강릉: environment=[&quot;바다&quot;], bestSeason=[&quot;여름&quot;,&quot;가을&quot;]</li>
+<li>서울: environment=[&quot;도심&quot;], bestSeason=[&quot;봄&quot;,&quot;가을&quot;]</li>
+<li>전주: environment=[&quot;소도시&quot;], bestSeason=[&quot;봄&quot;,&quot;가을&quot;]</li>
+<li>속초: environment=[&quot;바다&quot;,&quot;산/자연&quot;], bestSeason=[&quot;여름&quot;]</li>
+<li>... (30개 모두 작성)</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>불필요한 데이터 파일 삭제</strong> — <code>lib/data/</code> 정리<ul>
+<li><code>reviews.ts</code> 삭제</li>
+<li><code>coworkings.ts</code> 삭제</li>
+<li><code>programs.ts</code> 삭제</li>
+<li><code>mappers.ts</code> 삭제 (Prisma 매퍼 — DB 미사용)</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>데이터 레이어 수정</strong> — <code>lib/data/index.ts</code><ul>
+<li><code>filterCities</code> 함수를 새 필터 기준으로 변경 (Phase 3에서 UI 연결)</li>
+<li>좋아요 내림차순 기본 정렬 적용</li>
+</ul>
+</li>
+</ul>
+<h3>검증 체크리스트</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <code>next build</code> 성공</li>
+<li><input disabled="" type="checkbox"> 홈페이지에서 30개 도시 카드가 모두 표시됨</li>
+<li><input disabled="" type="checkbox"> 각 도시 데이터에 environment, bestSeason, likes, dislikes가 존재함</li>
+<li><input disabled="" type="checkbox"> TypeScript 타입 에러 0건</li>
+<li><input disabled="" type="checkbox"> 기존 metrics, costs, weather 등 복잡한 데이터가 제거됨</li>
+</ul>
+<hr>
+<h2>Phase 3. 필터 시스템 교체</h2>
+<h3>오버뷰</h3>
+<p>기존 5개 필터(지역, 생활비, 인터넷, KTX, 바다)와 정렬 옵션을 삭제하고, MVP 스펙에 정의된 4개 필터(예산, 지역, 환경, 최고의 계절)로 교체한다. 정렬 드롭다운은 삭제하고 기본 정렬은 좋아요 수 내림차순으로 고정한다.</p>
+<h3>현재 상태 (Phase 2 완료 후)</h3>
+<ul>
+<li>FilterBar에 기존 5개 필터 + 정렬 드롭다운이 남아있음</li>
+<li>도시 데이터에 environment, bestSeason 필드가 추가됨</li>
+<li>filterCities 함수가 새 필터 기준으로 변경됨 (아직 UI 미연결)</li>
+</ul>
+<h3>수정/개선 체크리스트</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <strong>FilterBar 컴포넌트 재작성</strong> — <code>components/home/FilterBar.tsx</code><ul>
+<li>기존 필터 UI 전부 삭제</li>
+<li>새 필터 4개 추가:<ul>
+<li>예산: Select 드롭다운 (&quot;전체&quot;, &quot;80만 이하&quot;, &quot;80<del>120만&quot;, &quot;120</del>160만&quot;, &quot;160만 이상&quot;)</li>
+<li>지역: Select 드롭다운 (&quot;전체 지역&quot;, &quot;서울/경기&quot;, &quot;강원&quot;, &quot;충청&quot;, &quot;전라&quot;, &quot;경상&quot;, &quot;제주&quot;)</li>
+<li>환경: Select 드롭다운 (&quot;전체&quot;, &quot;바다&quot;, &quot;산/자연&quot;, &quot;도심&quot;, &quot;소도시&quot;)</li>
+<li>최고의 계절: Select 드롭다운 (&quot;전체&quot;, &quot;봄&quot;, &quot;여름&quot;, &quot;가을&quot;, &quot;겨울&quot;)</li>
+</ul>
+</li>
+<li>정렬 드롭다운 삭제</li>
+<li>URL searchParams로 필터 상태 관리 (기존 패턴 유지)</li>
+<li>필터 초기화 버튼 유지</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>filterCities 함수 연결</strong> — <code>lib/data/index.ts</code><ul>
+<li>FilterParams에 맞게 필터링 로직 구현:<ul>
+<li><code>budget</code>: &quot;80&quot; → monthlyCost &lt;= 80, &quot;80-120&quot; → 80 &lt; monthlyCost &lt;= 120, &quot;120-160&quot; → 120 &lt; monthlyCost &lt;= 160, &quot;160&quot; → monthlyCost &gt; 160</li>
+<li><code>region</code>: 기존과 동일 (region 일치)</li>
+<li><code>environment</code>: 도시의 environment 배열에 해당 값 포함 여부</li>
+<li><code>bestSeason</code>: 도시의 bestSeason 배열에 해당 값 포함 여부</li>
+</ul>
+</li>
+<li>정렬: 항상 likes 내림차순</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>홈페이지 searchParams 연결</strong> — <code>app/page.tsx</code><ul>
+<li>새 FilterParams 타입에 맞게 searchParams 전달</li>
+</ul>
+</li>
+</ul>
+<h3>검증 체크리스트</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <code>next build</code> 성공</li>
+<li><input disabled="" type="checkbox"> FilterBar에 4개 필터 드롭다운이 표시됨</li>
+<li><input disabled="" type="checkbox"> 정렬 드롭다운이 없음</li>
+<li><input disabled="" type="checkbox"> 예산 필터: &quot;80만 이하&quot; 선택 시 monthlyCost 80 이하 도시만 표시</li>
+<li><input disabled="" type="checkbox"> 지역 필터: &quot;강원&quot; 선택 시 강원 도시만 표시</li>
+<li><input disabled="" type="checkbox"> 환경 필터: &quot;바다&quot; 선택 시 environment에 &quot;바다&quot;가 포함된 도시만 표시</li>
+<li><input disabled="" type="checkbox"> 최고의 계절 필터: &quot;봄&quot; 선택 시 bestSeason에 &quot;봄&quot;이 포함된 도시만 표시</li>
+<li><input disabled="" type="checkbox"> 필터 2개 이상 조합 시 AND 조건으로 동작</li>
+<li><input disabled="" type="checkbox"> 도시 리스트가 좋아요 수 내림차순으로 정렬됨</li>
+<li><input disabled="" type="checkbox"> 필터 초기화 클릭 시 모든 필터 해제</li>
+</ul>
+<hr>
+<h2>Phase 4. 도시 카드 재디자인</h2>
+<h3>오버뷰</h3>
+<p>기존 도시 카드의 순위, 인터넷 속도, 기온, 호버 차트를 제거하고, 필터 기준에 해당하는 4개 항목(예산, 지역, 환경, 최고의 계절)을 key-value 형태로 표시한다. 좋아요/싫어요 수를 카드 하단에 표시한다. 상단 &quot;총 N개 도시&quot;를 &quot;도시 리스트&quot;로 변경한다.</p>
+<h3>현재 상태 (Phase 3 완료 후)</h3>
+<ul>
+<li>CityCard 컴포넌트: 순위(#1~#30), 이미지, 도시명, 지역, 인터넷 속도, 기온, 월 생활비, 호버 시 6개 지표 바 차트 표시</li>
+<li>CityGrid: &quot;총 N개 도시&quot; 헤더 + 4열 그리드</li>
+<li>도시 데이터에 environment, bestSeason, likes, dislikes 존재</li>
+</ul>
+<h3>수정/개선 체크리스트</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <strong>CityCard 재작성</strong> — <code>components/home/CityCard.tsx</code><ul>
+<li>삭제할 요소:<ul>
+<li>순위 배지 (#1, #2 ...)</li>
+<li>인터넷 속도 (📡 95Mbps)</li>
+<li>현재 기온 (☀️ 12°)</li>
+<li>호버 시 반투명 오버레이 + 6개 지표 바 차트</li>
+</ul>
+</li>
+<li>새 카드 구조:<pre><code>[도시 이미지]
+도시명
+지역
+
+💰 예산        80만원/월
+📍 지역        전라
+🌿 환경        소도시
+🌸 최고의 계절  봄, 가을
+
+👍 42    👎 3
+</code></pre>
+</li>
+<li>key-value는 좌측 라벨(이모지+텍스트) + 우측 값으로 정렬</li>
+<li>좋아요/싫어요는 카드 하단에 아이콘 + 숫자로 표시 (이 단계에서는 클릭 불가, 숫자만 표시)</li>
+<li>카드 클릭 시 아무 페이지로 이동하지 않음 (도시 상세 페이지 삭제됨)<ul>
+<li>기존 <code>&lt;Link href={/cities/${slug}}&gt;</code> 래퍼 제거</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>CityGrid 수정</strong> — <code>components/home/CityGrid.tsx</code><ul>
+<li>&quot;총 N개 도시&quot; → &quot;도시 리스트&quot;로 텍스트 변경</li>
+<li>그리드 열 수 조정 (모바일 1열, 태블릿 2열, 데스크톱 3~4열 유지)</li>
+</ul>
+</li>
+</ul>
+<h3>검증 체크리스트</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <code>next build</code> 성공</li>
+<li><input disabled="" type="checkbox"> 도시 카드에 순위 번호가 없음</li>
+<li><input disabled="" type="checkbox"> 도시 카드에 인터넷 속도, 기온이 없음</li>
+<li><input disabled="" type="checkbox"> 도시 카드 호버 시 바 차트 오버레이가 없음</li>
+<li><input disabled="" type="checkbox"> 도시 카드에 예산, 지역, 환경, 최고의 계절이 key-value로 표시됨</li>
+<li><input disabled="" type="checkbox"> 도시 카드 하단에 좋아요/싫어요 숫자가 표시됨</li>
+<li><input disabled="" type="checkbox"> 상단 텍스트가 &quot;도시 리스트&quot;로 표시됨</li>
+<li><input disabled="" type="checkbox"> 도시 카드 클릭 시 페이지 이동이 없음</li>
+<li><input disabled="" type="checkbox"> 반응형 레이아웃 정상 (모바일/태블릿/데스크톱)</li>
+<li><input disabled="" type="checkbox"> 콘솔 에러 0건</li>
+</ul>
+<hr>
+<h2>Phase 5. 좋아요/싫어요 인터랙션 구현</h2>
+<h3>오버뷰</h3>
+<p>도시 카드의 좋아요/싫어요 버튼에 클릭 인터랙션을 추가한다.
+클릭 시 아이콘 색상이 변경되고, 좋아요/싫어요 수가 증감한다.
+데이터는 로컬 state로 관리한다 (DB 미사용).
+비로그인 시 클릭하면 로그인 페이지로 안내한다.</p>
+<h3>현재 상태 (Phase 4 완료 후)</h3>
+<ul>
+<li>도시 카드에 👍 / 👎 숫자가 표시되지만 클릭 불가</li>
+<li>인증 시스템은 Supabase Auth로 동작 중 (로그인/회원가입 가능)</li>
+<li>Header에서 로그인 상태를 Supabase로 확인 중</li>
+</ul>
+<h3>수정/개선 체크리스트</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <strong>좋아요/싫어요 버튼 컴포넌트 생성</strong> — <code>components/home/VoteButtons.tsx</code> (새 파일)<ul>
+<li>&quot;use client&quot; 컴포넌트</li>
+<li>Props: <code>citySlug</code>, <code>initialLikes</code>, <code>initialDislikes</code></li>
+<li>상태 관리:<ul>
+<li><code>voteState</code>: &quot;none&quot; | &quot;liked&quot; | &quot;disliked&quot;</li>
+<li><code>likes</code>: number (로컬 state)</li>
+<li><code>dislikes</code>: number (로컬 state)</li>
+</ul>
+</li>
+<li>좋아요 버튼 클릭 로직:<ul>
+<li>현재 &quot;none&quot; → &quot;liked&quot;: 아이콘 빨간색, likes +1</li>
+<li>현재 &quot;liked&quot; → &quot;none&quot;: 아이콘 원복, likes -1 (토글 해제)</li>
+<li>현재 &quot;disliked&quot; → &quot;liked&quot;: 아이콘 빨간색, likes +1, dislikes -1</li>
+</ul>
+</li>
+<li>싫어요 버튼 클릭 로직:<ul>
+<li>현재 &quot;none&quot; → &quot;disliked&quot;: 아이콘 파란색, dislikes +1</li>
+<li>현재 &quot;disliked&quot; → &quot;none&quot;: 아이콘 원복, dislikes -1 (토글 해제)</li>
+<li>현재 &quot;liked&quot; → &quot;disliked&quot;: 아이콘 파란색, dislikes +1, likes -1</li>
+</ul>
+</li>
+<li>비로그인 시 클릭하면 <code>/login</code>으로 이동 (useRouter)</li>
+<li>로그인 상태 확인: Supabase <code>createClient().auth.getUser()</code></li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>CityCard에 VoteButtons 통합</strong> — <code>components/home/CityCard.tsx</code> 수정<ul>
+<li>기존 좋아요/싫어요 숫자 텍스트를 <code>&lt;VoteButtons /&gt;</code> 컴포넌트로 교체</li>
+<li>CityCard는 Server Component이므로 VoteButtons만 Client Component로 분리</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> <strong>CityGrid를 Client Component로 전환 또는 유지</strong><ul>
+<li>CityGrid 자체는 Server Component 유지 가능</li>
+<li>VoteButtons가 Client Component이므로 카드 내부에서 처리</li>
+</ul>
+</li>
+</ul>
+<h3>검증 체크리스트</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <code>next build</code> 성공</li>
+<li><input disabled="" type="checkbox"> 비로그인 상태에서 좋아요/싫어요 클릭 시 <code>/login</code>으로 이동</li>
+<li><input disabled="" type="checkbox"> 로그인 후 좋아요 클릭 시:<ul>
+<li><input disabled="" type="checkbox"> 👍 아이콘이 빨간색으로 변경</li>
+<li><input disabled="" type="checkbox"> 좋아요 수가 +1</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> 좋아요 상태에서 다시 좋아요 클릭 시:<ul>
+<li><input disabled="" type="checkbox"> 아이콘 색상 원복 (회색)</li>
+<li><input disabled="" type="checkbox"> 좋아요 수가 -1 (토글 해제)</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> 좋아요 상태에서 싫어요 클릭 시:<ul>
+<li><input disabled="" type="checkbox"> 👍 빨간색 해제, 👎 파란색 활성화</li>
+<li><input disabled="" type="checkbox"> 좋아요 수 -1, 싫어요 수 +1</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> 싫어요 클릭/토글도 동일하게 동작</li>
+<li><input disabled="" type="checkbox"> 페이지 새로고침 시 투표 상태 초기화됨 (DB 미사용이므로 정상)</li>
+<li><input disabled="" type="checkbox"> 콘솔 에러 0건</li>
+<li><input disabled="" type="checkbox"> 모바일에서도 버튼 클릭 정상 동작</li>
+</ul>
+<hr>
+<h2>Phase 요약</h2>
+<table>
+<thead>
+<tr>
+<th>Phase</th>
+<th>핵심 작업</th>
+<th>완료 시 상태</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>1</strong></td>
+<td>페이지/컴포넌트 삭제, 네비/사이드바/Footer 단순화</td>
+<td>홈+인증 3페이지만 존재, 사이드바 없음</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>City 타입에 environment/bestSeason/likes/dislikes 추가, 30개 도시 데이터 업데이트</td>
+<td>새 데이터 모델 준비 완료</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>FilterBar를 4개 필터로 교체, 정렬 삭제, filterCities 로직 변경</td>
+<td>새 필터로 도시 필터링 동작</td>
+</tr>
+<tr>
+<td><strong>4</strong></td>
+<td>CityCard 재디자인 (key-value 레이아웃), 순위/기온/인터넷 삭제</td>
+<td>MVP 카드 디자인 완성</td>
+</tr>
+<tr>
+<td><strong>5</strong></td>
+<td>좋아요/싫어요 클릭 인터랙션, 색상 변경, 토글 로직</td>
+<td>MVP 기능 완성</td>
+</tr>
+</tbody></table>
+
+</body></html>

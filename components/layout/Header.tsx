@@ -1,12 +1,43 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import MobileNav from "./MobileNav";
+import type { User } from "@supabase/supabase-js";
 
 export default function Header() {
-  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  }
+
+  const nickname = user?.user_metadata?.nickname || user?.email;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -16,35 +47,21 @@ export default function Header() {
             <span className="text-xl">🏠</span>
             <span className="font-bold text-lg">K-Nomad</span>
           </Link>
-          <nav className="hidden md:flex items-center gap-4 text-sm">
-            <Link
-              href="/"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              홈
-            </Link>
-            <Link
-              href="/compare"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              비교
-            </Link>
-          </nav>
         </div>
 
         <div className="flex items-center gap-2">
-          {status === "loading" ? (
+          {loading ? (
             <div className="hidden md:block w-20 h-8" />
-          ) : session?.user ? (
+          ) : user ? (
             <>
               <span className="hidden md:inline text-sm text-muted-foreground">
-                {session.user.nickname || session.user.name || session.user.email}
+                {nickname}
               </span>
               <Button
                 variant="ghost"
                 size="sm"
                 className="hidden md:inline-flex"
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={handleSignOut}
               >
                 로그아웃
               </Button>
@@ -56,7 +73,7 @@ export default function Header() {
                   로그인
                 </Button>
               </Link>
-              <Link href="/signup">
+              <Link href="/register">
                 <Button size="sm" className="hidden md:inline-flex">
                   회원가입
                 </Button>

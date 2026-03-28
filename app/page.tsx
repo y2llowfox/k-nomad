@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import Hero from "@/components/home/Hero";
 import FilterBar from "@/components/home/FilterBar";
 import CityGrid from "@/components/home/CityGrid";
-import Sidebar from "@/components/home/Sidebar";
 import { filterCities } from "@/lib/data";
 import { FilterParams } from "@/lib/types";
 
@@ -20,10 +19,7 @@ export default async function HomePage({
         <FilterBar />
       </Suspense>
       <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-6">
-          <CityGrid cities={cities} />
-          <Sidebar />
-        </div>
+        <CityGrid cities={cities} />
       </div>
     </>
   );

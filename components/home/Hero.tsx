@@ -12,7 +12,7 @@ export default function Hero() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const params = email ? `?email=${encodeURIComponent(email)}` : "";
-    router.push(`/signup${params}`);
+    router.push(`/register${params}`);
   }
 
   return (

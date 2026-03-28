@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import AuthProvider from "@/components/providers/AuthProvider";
 
 const notoSansKR = Noto_Sans_KR({
   subsets: ["latin"],
@@ -27,13 +26,11 @@ export default function RootLayout({
   return (
     <html lang="ko" className={cn("font-sans", notoSansKR.variable)}>
       <body className="antialiased min-h-screen flex flex-col">
-        <AuthProvider>
-          <TooltipProvider>
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </TooltipProvider>
-        </AuthProvider>
+        <TooltipProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </TooltipProvider>
       </body>
     </html>
   );
