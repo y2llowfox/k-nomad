@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db";
 
@@ -45,6 +46,8 @@ export async function POST(
         where: { slug },
         data: { [type === "like" ? "likes" : "dislikes"]: { decrement: 1 } },
       });
+      revalidatePath(`/cities/${slug}`);
+      revalidatePath("/");
       return NextResponse.json({ action: "removed", type });
     } else {
       // 다른 타입 → 전환
@@ -61,6 +64,8 @@ export async function POST(
           [newField]: { increment: 1 },
         },
       });
+      revalidatePath(`/cities/${slug}`);
+      revalidatePath("/");
       return NextResponse.json({ action: "switched", type });
     }
   } else {
@@ -72,6 +77,8 @@ export async function POST(
       where: { slug },
       data: { [type === "like" ? "likes" : "dislikes"]: { increment: 1 } },
     });
+    revalidatePath(`/cities/${slug}`);
+    revalidatePath("/");
     return NextResponse.json({ action: "created", type });
   }
 }
