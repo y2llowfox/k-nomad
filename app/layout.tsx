@@ -10,7 +10,8 @@ import { Analytics } from "@vercel/analytics/react";
 const notoSansKR = Noto_Sans_KR({
   subsets: ["latin"],
   variable: "--font-sans",
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {

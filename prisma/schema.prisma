@@ -63,6 +63,10 @@ model City {
   programs   WorkationProgram[]
   meetups    Meetup[]
   votes      CityVote[]
+
+  @@index([likes])
+  @@index([region])
+  @@index([monthlyCost])
 }
 
 model CityVote {

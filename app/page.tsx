@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-export const revalidate = 10; // 10초마다 재생성
+export const revalidate = 3600;
 
 import Hero from "@/components/home/Hero";
 import FilterBar from "@/components/home/FilterBar";

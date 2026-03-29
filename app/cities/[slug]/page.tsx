@@ -1,16 +1,19 @@
 import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import { cache } from "react";
 import { getCityBySlug } from "@/lib/data";
 import CityDetail from "@/components/city/CityDetail";
 
-export const revalidate = 10; // 10초마다 재생성
+export const revalidate = 3600;
+
+const getCity = cache((slug: string) => getCityBySlug(slug));
 
 interface Props {
   params: { slug: string };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const city = await getCityBySlug(params.slug);
+  const city = await getCity(params.slug);
   if (!city) return { title: "도시를 찾을 수 없습니다" };
 
   return {
@@ -20,7 +23,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function CityPage({ params }: Props) {
-  const city = await getCityBySlug(params.slug);
+  const city = await getCity(params.slug);
 
   if (!city) {
     notFound();

@@ -200,6 +200,15 @@ CREATE UNIQUE INDEX "User_nickname_key" ON "User"("nickname");
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
+CREATE INDEX "City_likes_idx" ON "City"("likes");
+
+-- CreateIndex
+CREATE INDEX "City_region_idx" ON "City"("region");
+
+-- CreateIndex
+CREATE INDEX "City_monthlyCost_idx" ON "City"("monthlyCost");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "CityVote_userId_citySlug_key" ON "CityVote"("userId", "citySlug");
 
 -- CreateIndex
