@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 10; // 10초마다 재생성
 
 import Hero from "@/components/home/Hero";
 import FilterBar from "@/components/home/FilterBar";

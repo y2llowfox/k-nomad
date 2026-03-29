@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { getCityBySlug } from "@/lib/data";
 import CityDetail from "@/components/city/CityDetail";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 10; // 10초마다 재생성
 
 interface Props {
   params: { slug: string };
