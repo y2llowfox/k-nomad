@@ -1,4 +1,7 @@
 import { Suspense } from "react";
+
+export const dynamic = "force-dynamic";
+
 import Hero from "@/components/home/Hero";
 import FilterBar from "@/components/home/FilterBar";
 import CityGrid from "@/components/home/CityGrid";

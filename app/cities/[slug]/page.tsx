@@ -3,6 +3,8 @@ import { Metadata } from "next";
 import { getCityBySlug } from "@/lib/data";
 import CityDetail from "@/components/city/CityDetail";
 
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: { slug: string };
 }

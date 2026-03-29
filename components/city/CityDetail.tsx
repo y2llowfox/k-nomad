@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { City } from "@/lib/types";
@@ -14,6 +14,15 @@ export default function CityDetail({ city }: CityDetailProps) {
   const [dislikes, setDislikes] = useState(city.dislikes);
   const [userVote, setUserVote] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/cities/${city.slug}/vote`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.vote) setUserVote(data.vote);
+      })
+      .catch(() => {});
+  }, [city.slug]);
 
   async function handleVote(type: "like" | "dislike") {
     setLoading(true);
