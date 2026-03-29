@@ -13,7 +13,7 @@ export default function CityDetail({ city }: CityDetailProps) {
   const [likes, setLikes] = useState(city.likes);
   const [dislikes, setDislikes] = useState(city.dislikes);
   const [userVote, setUserVote] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [pending, setPending] = useState(false);
 
   useEffect(() => {
     fetch(`/api/cities/${city.slug}/vote`)
@@ -25,7 +25,37 @@ export default function CityDetail({ city }: CityDetailProps) {
   }, [city.slug]);
 
   async function handleVote(type: "like" | "dislike") {
-    setLoading(true);
+    if (pending) return;
+    setPending(true);
+
+    // Optimistic UI: 클릭 즉시 상태 업데이트
+    const prevLikes = likes;
+    const prevDislikes = dislikes;
+    const prevVote = userVote;
+
+    if (userVote === type) {
+      // 같은 버튼 재클릭 → 토글 해제
+      if (type === "like") setLikes((v) => v - 1);
+      else setDislikes((v) => v - 1);
+      setUserVote(null);
+    } else if (userVote) {
+      // 다른 버튼 → 전환
+      if (type === "like") {
+        setLikes((v) => v + 1);
+        setDislikes((v) => v - 1);
+      } else {
+        setLikes((v) => v - 1);
+        setDislikes((v) => v + 1);
+      }
+      setUserVote(type);
+    } else {
+      // 새 투표
+      if (type === "like") setLikes((v) => v + 1);
+      else setDislikes((v) => v + 1);
+      setUserVote(type);
+    }
+
+    // API 호출 (백그라운드)
     try {
       const res = await fetch(`/api/cities/${city.slug}/vote`, {
         method: "POST",
@@ -34,34 +64,24 @@ export default function CityDetail({ city }: CityDetailProps) {
       });
 
       if (res.status === 401) {
+        // 미인증 → 원복 후 로그인 이동
+        setLikes(prevLikes);
+        setDislikes(prevDislikes);
+        setUserVote(prevVote);
         window.location.href = "/login";
-        return;
-      }
-
-      const data = await res.json();
-
-      if (data.action === "created") {
-        if (type === "like") setLikes((v) => v + 1);
-        else setDislikes((v) => v + 1);
-        setUserVote(type);
-      } else if (data.action === "removed") {
-        if (type === "like") setLikes((v) => v - 1);
-        else setDislikes((v) => v - 1);
-        setUserVote(null);
-      } else if (data.action === "switched") {
-        if (type === "like") {
-          setLikes((v) => v + 1);
-          setDislikes((v) => v - 1);
-        } else {
-          setLikes((v) => v - 1);
-          setDislikes((v) => v + 1);
-        }
-        setUserVote(type);
+      } else if (!res.ok) {
+        // API 에러 → 원복
+        setLikes(prevLikes);
+        setDislikes(prevDislikes);
+        setUserVote(prevVote);
       }
     } catch {
-      // 네트워크 에러 무시
+      // 네트워크 에러 → 원복
+      setLikes(prevLikes);
+      setDislikes(prevDislikes);
+      setUserVote(prevVote);
     } finally {
-      setLoading(false);
+      setPending(false);
     }
   }
 
@@ -112,7 +132,7 @@ export default function CityDetail({ city }: CityDetailProps) {
         <Button
           variant={userVote === "like" ? "default" : "outline"}
           size="lg"
-          disabled={loading}
+          disabled={pending}
           onClick={() => handleVote("like")}
         >
           👍 좋아요 {likes}
@@ -120,7 +140,7 @@ export default function CityDetail({ city }: CityDetailProps) {
         <Button
           variant={userVote === "dislike" ? "destructive" : "outline"}
           size="lg"
-          disabled={loading}
+          disabled={pending}
           onClick={() => handleVote("dislike")}
         >
           👎 싫어요 {dislikes}
