@@ -87,6 +87,10 @@ export interface City {
   weatherIcon: string;
   hasKTX: boolean;
   isSeaside: boolean;
+  likes: number;
+  dislikes: number;
+  environment: string[];
+  bestSeason: string[];
   highlights: string[];
   pros: ProConTag[];
   cons: ProConTag[];
@@ -115,8 +119,6 @@ export interface Meetup {
 export interface FilterParams {
   region?: string;
   maxCost?: string;
-  minInternet?: string;
-  hasKTX?: string;
-  isSeaside?: string;
-  sort?: string;
+  environment?: string;
+  bestSeason?: string;
 }

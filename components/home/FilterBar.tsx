@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { REGIONS, SORT_OPTIONS, COST_RANGES, INTERNET_RANGES } from "@/lib/constants";
+import { REGIONS, BUDGET_RANGES, ENVIRONMENTS, SEASONS } from "@/lib/constants";
 
 export default function FilterBar() {
   const router = useRouter();
@@ -39,16 +39,34 @@ export default function FilterBar() {
     <div className="bg-background border-b sticky top-14 z-40">
       <div className="container mx-auto px-4 py-3">
         <div className="flex flex-wrap items-center gap-2">
+          {/* Budget */}
+          <Select
+            value={searchParams.get("maxCost") ?? "all"}
+            onValueChange={(v) => updateParam("maxCost", v)}
+          >
+            <SelectTrigger className="w-[130px] h-9 text-sm">
+              <SelectValue placeholder="💰 예산" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">💰 전체</SelectItem>
+              {BUDGET_RANGES.map((r) => (
+                <SelectItem key={r.value} value={r.value}>
+                  {r.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           {/* Region */}
           <Select
             value={searchParams.get("region") ?? "all"}
             onValueChange={(v) => updateParam("region", v)}
           >
             <SelectTrigger className="w-[120px] h-9 text-sm">
-              <SelectValue placeholder="지역" />
+              <SelectValue placeholder="📍 지역" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">전체 지역</SelectItem>
+              <SelectItem value="all">📍 전체</SelectItem>
               {REGIONS.map((r) => (
                 <SelectItem key={r} value={r}>
                   {r}
@@ -57,69 +75,41 @@ export default function FilterBar() {
             </SelectContent>
           </Select>
 
-          {/* Cost */}
+          {/* Environment */}
           <Select
-            value={searchParams.get("maxCost") ?? "all"}
-            onValueChange={(v) => updateParam("maxCost", v)}
+            value={searchParams.get("environment") ?? "all"}
+            onValueChange={(v) => updateParam("environment", v)}
           >
-            <SelectTrigger className="w-[130px] h-9 text-sm">
-              <SelectValue placeholder="생활비" />
+            <SelectTrigger className="w-[120px] h-9 text-sm">
+              <SelectValue placeholder="🌿 환경" />
             </SelectTrigger>
             <SelectContent>
-              {COST_RANGES.map((r) => (
-                <SelectItem key={r.value} value={r.value}>
-                  {r.label}
+              <SelectItem value="all">🌿 전체</SelectItem>
+              {ENVIRONMENTS.map((e) => (
+                <SelectItem key={e} value={e}>
+                  {e}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          {/* Internet */}
+          {/* Season */}
           <Select
-            value={searchParams.get("minInternet") ?? "all"}
-            onValueChange={(v) => updateParam("minInternet", v)}
+            value={searchParams.get("bestSeason") ?? "all"}
+            onValueChange={(v) => updateParam("bestSeason", v)}
           >
-            <SelectTrigger className="w-[140px] h-9 text-sm">
-              <SelectValue placeholder="인터넷" />
+            <SelectTrigger className="w-[120px] h-9 text-sm">
+              <SelectValue placeholder="🌸 계절" />
             </SelectTrigger>
             <SelectContent>
-              {INTERNET_RANGES.map((r) => (
-                <SelectItem key={r.value} value={r.value}>
-                  {r.label}
+              <SelectItem value="all">🌸 전체</SelectItem>
+              {SEASONS.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-
-          {/* KTX */}
-          <Button
-            variant={searchParams.get("hasKTX") === "true" ? "default" : "outline"}
-            size="sm"
-            className="h-9 text-sm"
-            onClick={() =>
-              updateParam(
-                "hasKTX",
-                searchParams.get("hasKTX") === "true" ? "" : "true"
-              )
-            }
-          >
-            🚆 KTX
-          </Button>
-
-          {/* Seaside */}
-          <Button
-            variant={searchParams.get("isSeaside") === "true" ? "default" : "outline"}
-            size="sm"
-            className="h-9 text-sm"
-            onClick={() =>
-              updateParam(
-                "isSeaside",
-                searchParams.get("isSeaside") === "true" ? "" : "true"
-              )
-            }
-          >
-            🌊 바다
-          </Button>
 
           {/* Clear */}
           {hasFilters && (
@@ -132,26 +122,6 @@ export default function FilterBar() {
               ✕ 초기화
             </Button>
           )}
-
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Sort */}
-          <Select
-            value={searchParams.get("sort") ?? "overall"}
-            onValueChange={(v) => updateParam("sort", v)}
-          >
-            <SelectTrigger className="w-[150px] h-9 text-sm">
-              <SelectValue placeholder="정렬" />
-            </SelectTrigger>
-            <SelectContent>
-              {SORT_OPTIONS.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
       </div>
     </div>

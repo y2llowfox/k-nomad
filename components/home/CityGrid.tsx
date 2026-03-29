@@ -21,11 +21,11 @@ export default function CityGrid({ cities }: CityGridProps) {
   return (
     <div className="flex-1">
       <p className="text-sm text-muted-foreground mb-4">
-        총 {cities.length}개 도시
+        도시 리스트
       </p>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {cities.map((city, index) => (
-          <CityCard key={city.slug} city={city} rank={index + 1} />
+        {cities.map((city) => (
+          <CityCard key={city.slug} city={city} />
         ))}
       </div>
     </div>

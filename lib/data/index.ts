@@ -11,7 +11,7 @@ const CARD_INCLUDE = {
 export async function getAllCities(): Promise<City[]> {
   const raw = await prisma.city.findMany({
     include: CARD_INCLUDE,
-    orderBy: { overallScore: "desc" },
+    orderBy: { likes: "desc" },
   });
   return raw.map(mapCityCard);
 }
@@ -24,32 +24,49 @@ export async function filterCities(params: FilterParams): Promise<City[]> {
   }
 
   if (params.maxCost && params.maxCost !== "all") {
-    const maxCost = Number(params.maxCost);
-    if (!isNaN(maxCost)) {
-      where.monthlyCost = { lte: maxCost };
+    if (params.maxCost === "160+") {
+      where.monthlyCost = { gt: 160 };
+    } else {
+      const maxCost = Number(params.maxCost);
+      if (!isNaN(maxCost)) {
+        where.monthlyCost = { lte: maxCost };
+      }
     }
   }
 
-  if (params.minInternet && params.minInternet !== "all") {
-    const minInternet = Number(params.minInternet);
-    if (!isNaN(minInternet)) {
-      where.internetSpeed = { gte: minInternet };
-    }
+  if (params.environment && params.environment !== "all") {
+    where.environment = { array_contains: [params.environment] };
   }
 
-  if (params.hasKTX === "true") {
-    where.hasKTX = true;
-  }
-
-  if (params.isSeaside === "true") {
-    where.isSeaside = true;
+  if (params.bestSeason && params.bestSeason !== "all") {
+    where.bestSeason = { array_contains: [params.bestSeason] };
   }
 
   const raw = await prisma.city.findMany({
     where,
     include: CARD_INCLUDE,
-    orderBy: { overallScore: "desc" },
+    orderBy: { likes: "desc" },
   });
 
   return raw.map(mapCityCard);
+}
+
+export async function getCityBySlug(slug: string): Promise<City | null> {
+  const raw = await prisma.city.findUnique({
+    where: { slug },
+    include: {
+      metrics: true,
+      costs: true,
+      highlights: true,
+      tags: true,
+      weather: true,
+      photos: true,
+      nearbyFrom: true,
+    },
+  });
+
+  if (!raw) return null;
+
+  const { mapCity } = await import("./mappers");
+  return mapCity(raw);
 }

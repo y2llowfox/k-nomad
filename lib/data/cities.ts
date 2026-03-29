@@ -6,17 +6,30 @@ import {
   MonthlyWeather,
   Region,
 } from "@/lib/types";
-import { METRICS } from "@/lib/constants";
-
 /* ------------------------------------------------------------------ */
 /*  Helper                                                            */
 /* ------------------------------------------------------------------ */
+
+const METRICS: { key: string; label: string; emoji: string }[] = [
+  { key: "internet", label: "인터넷", emoji: "📡" },
+  { key: "cost", label: "생활비", emoji: "💰" },
+  { key: "transport", label: "교통", emoji: "🚆" },
+  { key: "coworking", label: "코워킹", emoji: "🏢" },
+  { key: "safety", label: "안전", emoji: "👌" },
+  { key: "food", label: "먹거리", emoji: "🍽️" },
+  { key: "nature", label: "자연환경", emoji: "🌿" },
+  { key: "culture", label: "문화", emoji: "🎭" },
+  { key: "medical", label: "의료", emoji: "🏥" },
+  { key: "amenities", label: "편의시설", emoji: "📱" },
+  { key: "community", label: "커뮤니티", emoji: "👥" },
+  { key: "housing", label: "주거", emoji: "🏘️" },
+];
 
 function makeMetrics(
   scores: Record<string, number>,
 ): MetricScore[] {
   return METRICS.map((m) => ({
-    key: m.key,
+    key: m.key as MetricScore["key"],
     label: m.label,
     emoji: m.emoji,
     score: scores[m.key] ?? 3.0,
@@ -81,6 +94,10 @@ function makeCity(opts: {
   weatherIcon: string;
   hasKTX: boolean;
   isSeaside: boolean;
+  likes?: number;
+  dislikes?: number;
+  environment?: string[];
+  bestSeason?: string[];
   highlights: string[];
   pros: ProConTag[];
   cons: ProConTag[];
@@ -107,6 +124,10 @@ function makeCity(opts: {
     weatherIcon: opts.weatherIcon,
     hasKTX: opts.hasKTX,
     isSeaside: opts.isSeaside,
+    likes: opts.likes ?? 0,
+    dislikes: opts.dislikes ?? 0,
+    environment: opts.environment ?? [],
+    bestSeason: opts.bestSeason ?? [],
     highlights: opts.highlights,
     pros: opts.pros,
     cons: opts.cons,
@@ -156,6 +177,10 @@ const jeju: City = {
   weatherIcon: "partly-cloudy",
   hasKTX: false,
   isSeaside: true,
+  likes: 0,
+  dislikes: 0,
+  environment: [],
+  bestSeason: [],
   highlights: [
     "국내 최대 디지털 노마드 커뮤니티 운영",
     "올레길, 한라산 등 자연 힐링 코스 풍부",
@@ -219,6 +244,10 @@ const gangneung: City = {
   weatherIcon: "sunny",
   hasKTX: true,
   isSeaside: true,
+  likes: 0,
+  dislikes: 0,
+  environment: [],
+  bestSeason: [],
   highlights: [
     "KTX로 서울에서 약 2시간 접근",
     "경포 해변 & 안목 카페 거리",
@@ -280,6 +309,10 @@ const jeonju: City = {
   weatherIcon: "sunny",
   hasKTX: true,
   isSeaside: false,
+  likes: 0,
+  dislikes: 0,
+  environment: [],
+  bestSeason: [],
   highlights: [
     "전주 한옥마을 도보 워케이션 인기",
     "비빔밥, 콩나물국밥 등 한국 음식 수도",
@@ -342,6 +375,10 @@ const busan: City = {
   weatherIcon: "partly-cloudy",
   hasKTX: true,
   isSeaside: true,
+  likes: 0,
+  dislikes: 0,
+  environment: [],
+  bestSeason: [],
   highlights: [
     "해운대·광안리 바다 뷰 코워킹 스페이스",
     "부산국제영화제(BIFF) 등 문화 행사 풍부",
@@ -405,6 +442,10 @@ const seoul: City = {
   weatherIcon: "cloudy",
   hasKTX: true,
   isSeaside: false,
+  likes: 0,
+  dislikes: 0,
+  environment: [],
+  bestSeason: [],
   highlights: [
     "위워크, 패스트파이브 등 코워킹 인프라 최고",
     "IT·스타트업 네트워킹 행사 매주 열림",
@@ -468,6 +509,10 @@ const pangyo: City = {
   weatherIcon: "cloudy",
   hasKTX: false,
   isSeaside: false,
+  likes: 0,
+  dislikes: 0,
+  environment: [],
+  bestSeason: [],
   highlights: [
     "네이버·카카오 등 IT 기업 밀집 지역",
     "판교 테크노밸리 코워킹 인프라 최상",

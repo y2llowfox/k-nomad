@@ -7,10 +7,8 @@ export async function GET(request: Request) {
   const params: FilterParams = {
     region: searchParams.get("region") ?? undefined,
     maxCost: searchParams.get("maxCost") ?? undefined,
-    minInternet: searchParams.get("minInternet") ?? undefined,
-    hasKTX: searchParams.get("hasKTX") ?? undefined,
-    isSeaside: searchParams.get("isSeaside") ?? undefined,
-    sort: searchParams.get("sort") ?? undefined,
+    environment: searchParams.get("environment") ?? undefined,
+    bestSeason: searchParams.get("bestSeason") ?? undefined,
   };
 
   const cities = await filterCities(params);
